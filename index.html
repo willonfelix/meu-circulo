@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gestor de Amigos PWA</title>
+    <meta name="theme-color" content="#4f46e5">
+    <meta name="description" content="Gerencie seus amigos, aniversários e presentes.">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <!-- Bibliotecas Externas -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 pb-20">
+
+    <!-- Cabeçalho -->
+    <header class="bg-indigo-600 text-white p-4 sticky top-0 z-20 shadow-md">
+        <div class="flex justify-between items-center max-w-3xl mx-auto">
+            <h1 class="text-xl font-bold"><i class="fas fa-users mr-2"></i>Meu Círculo</h1>
+            <button onclick="abrirModal()" class="bg-white text-indigo-600 px-4 py-2 rounded-full font-bold text-sm shadow hover:bg-gray-100 transition">
+                <i class="fas fa-plus mr-1"></i> Novo Amigo
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-3xl mx-auto p-4 space-y-6">
+
+        <!-- Alerta de Aniversariantes -->
+        <div id="alertaAniversario" class="hidden bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg shadow-sm fade-in">
+            <div class="flex items-start">
+                <i class="fas fa-birthday-cake text-yellow-500 mt-1 mr-3 text-xl"></i>
+                <div>
+                    <h3 class="font-bold text-yellow-800">Aniversários Próximos!</h3>
+                    <p id="listaAniversariantes" class="text-sm text-yellow-700 mt-1"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cards de Resumo -->
+        <div class="grid grid-cols-3 gap-3">
+            <div class="bg-white p-3 rounded-xl shadow-sm text-center border-b-4 border-indigo-500">
+                <p class="text-2xl font-bold text-gray-800" id="totalAmigos">0</p>
+                <p class="text-xs text-gray-500 uppercase font-semibold">Amigos</p>
+            </div>
+            <div class="bg-white p-3 rounded-xl shadow-sm text-center border-b-4 border-pink-500">
+                <p class="text-2xl font-bold text-gray-800" id="totalCriancas">0</p>
+                <p class="text-xs text-gray-500 uppercase font-semibold">Filhos (Total)</p>
+            </div>
+            <div class="bg-white p-3 rounded-xl shadow-sm text-center border-b-4 border-green-500">
+                <p class="text-2xl font-bold text-gray-800" id="festasMes">0</p>
+                <p class="text-xs text-gray-500 uppercase font-semibold">Festas este Mês</p>
+            </div>
+        </div>
+
+        <!-- Gráficos -->
+        <div class="bg-white p-4 rounded-xl shadow-sm">
+            <h2 class="font-bold text-gray-700 mb-4 text-sm uppercase tracking-wide">Estatísticas do Círculo</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="h-48"><canvas id="chartGenero"></canvas></div>
+                <div class="h-48"><canvas id="chartIdade"></canvas></div>
+                <div class="h-48"><canvas id="chartFestas"></canvas></div>
+            </div>
+        </div>
+
+        <!-- Lista de Amigos -->
+        <div>
+            <h2 class="font-bold text-gray-700 mb-3 text-lg">Sua Lista</h2>
+            <div id="listaAmigos" class="space-y-3">
+                <!-- Cards de amigos serão injetados aqui -->
+            </div>
+            <div id="msgVazia" class="text-center text-gray-400 py-10 hidden">
+                <i class="fas fa-user-friends text-4xl mb-2"></i>
+                <p>Nenhum amigo cadastrado ainda.</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal de Cadastro/Edição -->
+    <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-end sm:items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-t-2xl sm:rounded-2xl p-6 max-h-[90vh] overflow-y-auto fade-in">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-gray-800" id="modalTitulo">Novo Amigo</h2>
+                <button onclick="fecharModal()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            
+            <form id="formAmigo" onsubmit="salvarAmigo(event)" class="space-y-3">
+                <input type="hidden" id="amigoId">
+                
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">Nome Completo</label>
+                    <input type="text" id="nome" required class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">Nascimento</label>
+                        <input type="date" id="nascimento" required class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">Gênero</label>
+                        <select id="genero" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+                            <option value="Masculino">Masculino</option>
+                            <option value="Feminino">Feminino</option>
+                            <option value="Outro">Outro</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">Estilo / Personalidade</label>
+                    <select id="estilo" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+                        <option value="O Aventuroso">🏕️ O Aventuroso</option>
+                        <option value="O Intelectual">📚 O Intelectual</option>
+                        <option value="O Festivo">🎉 O Festivo</option>
+                        <option value="O Caseiro">🏠 O Caseiro</option>
+                        <option value="O Gastrônomo">🍔 O Gastrônomo</option>
+                        <option value="O Tecnológico">💻 O Tecnológico</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">Preferências de Presente</label>
+                    <textarea id="preferencias" rows="2" placeholder="Ex: Livros de ficção, cerveja artesanal, jogos de tabuleiro..." class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">Nº de Filhos</label>
+                        <input type="number" id="numFilhos" min="0" value="0" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">Gênero dos Filhos</label>
+                        <input type="text" id="generoFilhos" placeholder="Ex: 1 menino, 1 menina" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                </div>
+
+                <!-- Ideias Extras -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">Último Contato</label>
+                        <input type="date" id="ultimoContato" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">Proximidade</label>
+                        <select id="proximidade" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+                            <option value="Melhor Amigo">❤️ Melhor Amigo</option>
+                            <option value="Próximo">👍 Próximo</option>
+                            <option value="Conhecido">👋 Conhecido</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg mt-4 hover:bg-indigo-700 transition shadow-md">
+                    Salvar Amigo
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // --- ESTADO E DADOS ---
+        let amigos = JSON.parse(localStorage.getItem('meusAmigosPWA')) || [];
+        let charts = {};
+
+        // --- FUNÇÕES AUXILIARES ---
+        const calcularIdade = (dataNasc) => {
+            const hoje = new Date();
+            const nasc = new Date(dataNasc);
+            let idade = hoje.getFullYear() - nasc.getFullYear();
+            const m = hoje.getMonth() - nasc.getMonth();
+            if (m < 0 || (m === 0 && hoje.getDate() < nasc.getDate())) idade--;
+            return idade;
+        };
+
+        const diasParaAniversario = (dataNasc) => {
+            const hoje = new Date();
+            const nasc = new Date(dataNasc);
+            const proximoAniversario = new Date(hoje.getFullYear(), nasc.getMonth(), nasc.getDate());
+            if (proximoAniversario < hoje) {
+                proximoAniversario.setFullYear(hoje.getFullYear() + 1);
+            }
+            const diffTime = Math.abs(proximoAniversario - hoje);
+            return Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+        };
+
+        const formatarData = (dataStr) => {
+            if(!dataStr) return 'Nunca';
+            const [ano, mes, dia] = dataStr.split('-');
+            return `${dia}/${mes}/${ano}`;
+        };
+
+        // --- LÓGICA PRINCIPAL ---
+        function salvarAmigo(e) {
+            e.preventDefault();
+            const id = document.getElementById('amigoId').value;
+            const novoAmigo = {
+                id: id ? Number(id) : Date.now(),
+                nome: document.getElementById('nome').value,
+                nascimento: document.getElementById('nascimento').value,
+                genero: document.getElementById('genero').value,
+                estilo: document.getElementById('estilo').value,
+                preferencias: document.getElementById('preferencias').value,
+                numFilhos: Number(document.getElementById('numFilhos').value),
+                generoFilhos: document.getElementById('generoFilhos').value,
+                ultimoContato: document.getElementById('ultimoContato').value,
+                proximidade: document.getElementById('proximidade').value
+            };
+
+            if (id) {
+                const index = amigos.findIndex(a => a.id === Number(id));
+                amigos[index] = novoAmigo;
+            } else {
+                amigos.push(novoAmigo);
+            }
+
+            localStorage.setItem('meusAmigosPWA', JSON.stringify(amigos));
+            fecharModal();
+            renderizarTudo();
+        }
+
+        function editarAmigo(id) {
+            const amigo = amigos.find(a => a.id === id);
+            document.getElementById('amigoId').value = amigo.id;
+            document.getElementById('nome').value = amigo.nome;
+            document.getElementById('nascimento').value = amigo.nascimento;
+            document.getElementById('genero').value = amigo.genero;
+            document.getElementById('estilo').value = amigo.estilo;
+            document.getElementById('preferencias').value = amigo.preferencias;
+            document.getElementById('numFilhos').value = amigo.numFilhos;
+            document.getElementById('generoFilhos').value = amigo.generoFilhos;
+            document.getElementById('ultimoContato').value = amigo.ultimoContato;
+            document.getElementById('proximidade').value = amigo.proximidade;
+            
+            document.getElementById('modalTitulo').innerText = 'Editar Amigo';
+            abrirModal();
+        }
+
+        function excluirAmigo(id) {
+            if(confirm('Tem certeza que deseja remover este amigo?')) {
+                amigos = amigos.filter(a => a.id !== id);
+                localStorage.setItem('meusAmigosPWA', JSON.stringify(amigos));
+                renderizarTudo();
+            }
+        }
+
+        // --- RENDERIZAÇÃO ---
+        function renderizarTudo() {
+            renderizarLista();
+            renderizarAlertas();
+            atualizarResumo();
+            renderizarGraficos();
+        }
+
+        function renderizarLista() {
+            const container = document.getElementById('listaAmigos');
+            const msgVazia = document.getElementById('msgVazia');
+            container.innerHTML = '';
+
+            if (amigos.length === 0) {
+                msgVazia.classList.remove('hidden');
+                return;
+            }
+            msgVazia.classList.add('hidden');
+
+            // Ordenar por proximidade de aniversário
+            const amigosOrdenados = [...amigos].sort((a, b) => diasParaAniversario(a.nascimento) - diasParaAniversario(b.nascimento));
+
+            amigosOrdenados.forEach(amigo => {
+                const idade = calcularIdade(amigo.nascimento);
+                const dias = diasParaAniversario(amigo.nascimento);
+                let badgeAniversario = '';
+                if (dias === 0) badgeAniversario = '<span class="bg-red-100 text-red-700 text-xs px-2 py-1 rounded-full font-bold animate-pulse">🎉 É Hoje!</span>';
+                else if (dias <= 7) badgeAniversario = `<span class="bg-yellow-100 text-yellow-700 text-xs px-2 py-1 rounded-full font-bold">🎂 Em ${dias} dias</span>`;
+
+                let corProximidade = amigo.proximidade === 'Melhor Amigo' ? 'text-red-500' : (amigo.proximidade === 'Próximo' ? 'text-indigo-500' : 'text-gray-400');
+
+                const html = `
+                    <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 ${amigo.proximidade === 'Melhor Amigo' ? 'border-red-400' : 'border-indigo-400'} fade-in relative">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <h3 class="font-bold text-lg text-gray-800">${amigo.nome} <span class="text-sm font-normal text-gray-500">(${idade} anos)</span></h3>
+                                <p class="text-xs text-gray-500"><i class="fas fa-fingerprint mr-1"></i> ${amigo.estilo} | <i class="fas ${corProximidade} fa-heart mr-1"></i> ${amigo.proximidade}</p>
+                            </div>
+                            ${badgeAniversario}
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-2 text-sm text-gray-600 mb-3">
+                            <div><i class="fas fa-gift text-pink-400 w-5"></i> ${amigo.preferencias || 'Sem prefs.'}</div>
+                            <div><i class="fas fa-baby text-blue-400 w-5"></i> ${amigo.numFilhos} filho(s) ${amigo.generoFilhos ? '('+amigo.generoFilhos+')' : ''}</div>
+                            <div class="col-span-2"><i class="fas fa-history text-gray-400 w-5"></i> Último contato: ${formatarData(amigo.ultimoContato)}</div>
+                        </div>
+
+                        <div class="flex justify-end space-x-2 border-t pt-2 mt-2">
+                            <button onclick="editarAmigo(${amigo.id})" class="text-indigo-600 hover:bg-indigo-50 px-3 py-1 rounded text-sm font-semibold transition"><i class="fas fa-edit mr-1"></i> Editar</button>
+                            <button onclick="excluirAmigo(${amigo.id})" class="text-red-500 hover:bg-red-50 px-3 py-1 rounded text-sm font-semibold transition"><i class="fas fa-trash mr-1"></i> Excluir</button>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += html;
+            });
+        }
+
+        function renderizarAlertas() {
+            const proximos = amigos.filter(a => diasParaAniversario(a.nascimento) <= 7);
+            const alertaDiv = document.getElementById('alertaAniversario');
+            const lista = document.getElementById('listaAniversariantes');
+            
+            if (proximos.length > 0) {
+                alertaDiv.classList.remove('hidden');
+                lista.innerHTML = proximos.map(a => {
+                    const dias = diasParaAniversario(a.nascimento);
+                    return `<strong>${a.nome}</strong> (${dias === 0 ? 'Hoje' : 'em ' + dias + ' dias'})`;
+                }).join(' • ');
+            } else {
+                alertaDiv.classList.add('hidden');
+            }
+        }
+
+        function atualizarResumo() {
+            document.getElementById('totalAmigos').innerText = amigos.length;
+            const totalFilhos = amigos.reduce((acc, curr) => acc + curr.numFilhos, 0);
+            document.getElementById('totalCriancas').innerText = totalFilhos;
+            
+            const mesAtual = new Date().getMonth();
+            const festasMes = amigos.filter(a => new Date(a.nascimento).getMonth() === mesAtual).length;
+            document.getElementById('festasMes').innerText = festasMes;
+        }
+
+        function renderizarGraficos() {
+            // 1. Gráfico de Gênero
+            const generos = { 'Masculino': 0, 'Feminino': 0, 'Outro': 0 };
+            amigos.forEach(a => { if(generos[a.genero] !== undefined) generos[a.genero]++; });
+            
+            criarGrafico('chartGenero', 'doughnut', Object.keys(generos), Object.values(generos), ['#3b82f6', '#ec4899', '#a855f7'], 'Gênero');
+
+            // 2. Gráfico de Faixa Etária
+            const faixas = { '18-25': 0, '26-35': 0, '36-50': 0, '50+': 0 };
+            amigos.forEach(a => {
+                const idade = calcularIdade(a.nascimento);
+                if (idade <= 25) faixas['18-25']++;
+                else if (idade <= 35) faixas['26-35']++;
+                else if (idade <= 50) faixas['36-50']++;
+                else faixas['50+']++;
+            });
+            criarGrafico('chartIdade', 'bar', Object.keys(faixas), Object.values(faixas), ['#f59e0b', '#10b981', '#6366f1', '#ef4444'], 'Faixa Etária');
+
+            // 3. Gráfico de Festas por Mês
+            const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+            const contagemMeses = new Array(12).fill(0);
+            amigos.forEach(a => {
+                const mes = new Date(a.nascimento).getMonth();
+                contagemMeses[mes]++;
+            });
+            criarGrafico('chartFestas', 'bar', meses, contagemMeses, ['#8b5cf6'], 'Aniversários/Mês');
+        }
+
+        function criarGrafico(canvasId, tipo, labels, dados, cores, titulo) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            if (charts[canvasId]) charts[canvasId].destroy();
+
+            charts[canvasId] = new Chart(ctx, {
+                type: tipo,
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: titulo,
+                        data: dados,
+                        backgroundColor: cores,
+                        borderRadius: 4,
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: tipo === 'doughnut', position: 'right', labels: { boxWidth: 10, font: {size: 10} } },
+                        title: { display: true, text: titulo, font: { size: 12, weight: 'bold' } }
+                    },
+                    scales: tipo === 'bar' ? { y: { beginAtZero: true, ticks: { stepSize: 1 } } } : {}
+                }
+            });
+        }
+
+        // --- CONTROLE DO MODAL ---
+        function abrirModal() {
+            document.getElementById('modal').classList.remove('hidden');
+        }
+        function fecharModal() {
+            document.getElementById('modal').classList.add('hidden');
+            document.getElementById('formAmigo').reset();
+            document.getElementById('amigoId').value = '';
+            document.getElementById('modalTitulo').innerText = 'Novo Amigo';
+        }
+
+        // Inicialização
+        window.addEventListener('load', () => {
+            renderizarTudo();
+            // Registro do Service Worker para PWA
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW falhou:', err));
+            }
+        });
+    </script>
+</body>
+</html>
