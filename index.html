@@ -30,9 +30,14 @@
     <header class="bg-indigo-600 text-white p-4 sticky top-0 z-20 shadow-md">
         <div class="flex justify-between items-center max-w-3xl mx-auto">
             <h1 class="text-xl font-bold"><i class="fas fa-users mr-2"></i>Meu Círculo</h1>
-            <button onclick="abrirModal()" class="bg-white text-indigo-600 px-4 py-2 rounded-full font-bold text-sm shadow hover:bg-gray-100 transition">
-                <i class="fas fa-plus mr-1"></i> Novo Amigo
-            </button>
+            <div class="flex items-center gap-2">
+                <button onclick="abrirModal()" class="bg-white text-indigo-600 px-4 py-2 rounded-full font-bold text-sm shadow hover:bg-gray-100 transition">
+                    <i class="fas fa-plus mr-1"></i> Novo Amigo
+                </button>
+                <button onclick="abrirModalConfig()" class="bg-white bg-opacity-20 text-white p-2.5 rounded-full hover:bg-opacity-30 transition text-lg" title="Exportar/Importar dados">
+                    <i class="fas fa-cog"></i>
+                </button>
+            </div>
         </div>
     </header>
 
@@ -281,6 +286,28 @@
             </form>
         </div>
     </div>
+
+    <!-- Modal de Exportação/Importação -->
+    <div id="modalConfig" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-end sm:items-center justify-center p-4">
+        <div class="bg-white w-full max-w-sm rounded-t-2xl sm:rounded-2xl p-6 fade-in">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-gray-800"><i class="fas fa-cog mr-2"></i>Configurações</h2>
+                <button onclick="fecharModalConfig()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <p class="text-sm text-gray-500 mb-4">Exporte ou importe todos os seus dados em formato JSON.</p>
+            <div class="space-y-3">
+                <button onclick="exportarDados()" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg hover:bg-indigo-700 transition shadow-md flex items-center justify-center gap-2">
+                    <i class="fas fa-download"></i> Exportar Dados
+                </button>
+                <button onclick="document.getElementById('fileInput').click()" class="w-full bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition shadow-md flex items-center justify-center gap-2">
+                    <i class="fas fa-upload"></i> Importar Dados
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Input oculto para importação -->
+    <input type="file" id="fileInput" accept=".json" class="hidden" onchange="processarImportacao(event)">
 
     <script>
         // --- ESTADO E DADOS ---
@@ -690,6 +717,61 @@
             document.getElementById('festaId').value = '';
             document.getElementById('modalFestaTitulo').innerText = 'Nova Festa';
             popularConvidadosCheckbox([]);
+        }
+
+        // --- EXPORTAÇÃO / IMPORTAÇÃO ---
+        function abrirModalConfig() {
+            document.getElementById('modalConfig').classList.remove('hidden');
+        }
+        function fecharModalConfig() {
+            document.getElementById('modalConfig').classList.add('hidden');
+        }
+
+        function exportarDados() {
+            const dados = {
+                versao: 1,
+                exportadoEm: new Date().toISOString(),
+                amigos: amigos,
+                festas: festas
+            };
+            const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `meu-circulo-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            fecharModalConfig();
+        }
+
+        function processarImportacao(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function (ev) {
+                try {
+                    const dados = JSON.parse(ev.target.result);
+                    if (!dados.amigos || !Array.isArray(dados.amigos) || !dados.festas || !Array.isArray(dados.festas)) {
+                        alert('Arquivo inválido. O JSON deve conter os arrays "amigos" e "festas".');
+                        return;
+                    }
+                    const msg = `Isso substituirá TODOS os dados atuais.\n\nAmigos: ${dados.amigos.length}\nFestas: ${dados.festas.length}\n\nTem certeza?`;
+                    if (!confirm(msg)) return;
+                    amigos = dados.amigos;
+                    festas = dados.festas;
+                    localStorage.setItem('meusAmigosPWA', JSON.stringify(amigos));
+                    localStorage.setItem('festasPWA', JSON.stringify(festas));
+                    fecharModalConfig();
+                    renderizarTudo();
+                    alert('Dados importados com sucesso!');
+                } catch (err) {
+                    alert('Erro ao ler o arquivo. Verifique se é um JSON válido.');
+                }
+            };
+            reader.readAsText(file);
+            e.target.value = '';
         }
 
         // Inicialização
