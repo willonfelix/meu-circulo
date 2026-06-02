@@ -36,6 +36,18 @@
         </div>
     </header>
 
+    <!-- Abas de Navegação -->
+    <div class="bg-white border-b sticky top-14 z-10 shadow-sm">
+        <div class="max-w-3xl mx-auto flex">
+            <button id="tabAmigos" onclick="mudarTab('amigos')" class="flex-1 py-3 text-center font-bold text-sm border-b-2 border-indigo-600 text-indigo-600 transition">
+                <i class="fas fa-users mr-1"></i> Amigos
+            </button>
+            <button id="tabFestas" onclick="mudarTab('festas')" class="flex-1 py-3 text-center font-bold text-sm border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition">
+                <i class="fas fa-calendar-alt mr-1"></i> Festas
+            </button>
+        </div>
+    </div>
+
     <main class="max-w-3xl mx-auto p-4 space-y-6">
 
         <!-- Alerta de Aniversariantes -->
@@ -75,15 +87,34 @@
             </div>
         </div>
 
-        <!-- Lista de Amigos -->
-        <div>
-            <h2 class="font-bold text-gray-700 mb-3 text-lg">Sua Lista</h2>
-            <div id="listaAmigos" class="space-y-3">
-                <!-- Cards de amigos serão injetados aqui -->
+        <!-- Seção Amigos -->
+        <div id="amigosSection">
+            <div>
+                <h2 class="font-bold text-gray-700 mb-3 text-lg">Sua Lista</h2>
+                <div id="listaAmigos" class="space-y-3">
+                    <!-- Cards de amigos serão injetados aqui -->
+                </div>
+                <div id="msgVazia" class="text-center text-gray-400 py-10 hidden">
+                    <i class="fas fa-user-friends text-4xl mb-2"></i>
+                    <p>Nenhum amigo cadastrado ainda.</p>
+                </div>
             </div>
-            <div id="msgVazia" class="text-center text-gray-400 py-10 hidden">
-                <i class="fas fa-user-friends text-4xl mb-2"></i>
-                <p>Nenhum amigo cadastrado ainda.</p>
+        </div>
+
+        <!-- Seção Festas -->
+        <div id="festasSection" class="hidden">
+            <div class="flex justify-between items-center mb-3">
+                <h2 class="font-bold text-gray-700 text-lg">Suas Festas</h2>
+                <button onclick="abrirModalFesta()" class="bg-pink-600 text-white px-4 py-2 rounded-full font-bold text-sm shadow hover:bg-pink-700 transition">
+                    <i class="fas fa-plus mr-1"></i> Nova Festa
+                </button>
+            </div>
+            <div id="listaFestas" class="space-y-3">
+                <!-- Cards de festas serão injetados aqui -->
+            </div>
+            <div id="msgVaziaFestas" class="text-center text-gray-400 py-10">
+                <i class="fas fa-calendar-times text-4xl mb-2"></i>
+                <p>Nenhuma festa cadastrada ainda.</p>
             </div>
         </div>
     </main>
@@ -170,9 +201,91 @@
         </div>
     </div>
 
+    <!-- Modal de Cadastro/Edição de Festas -->
+    <div id="modalFesta" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-end sm:items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-t-2xl sm:rounded-2xl p-6 max-h-[90vh] overflow-y-auto fade-in">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-gray-800" id="modalFestaTitulo">Nova Festa</h2>
+                <button onclick="fecharModalFesta()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            
+            <form id="formFesta" onsubmit="salvarFesta(event)" class="space-y-3">
+                <input type="hidden" id="festaId">
+                
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">Nome do Evento</label>
+                    <input type="text" id="festaNome" required class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-pink-500 outline-none">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">Tipo</label>
+                        <select id="festaTipo" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-pink-500 outline-none bg-white">
+                            <option value="Aniversário">🎂 Aniversário</option>
+                            <option value="Chá de Panela">🍳 Chá de Panela</option>
+                            <option value="Chá de Bebê">👶 Chá de Bebê</option>
+                            <option value="Confraternização">🥂 Confraternização</option>
+                            <option value="Casamento">💍 Casamento</option>
+                            <option value="Formatura">🎓 Formatura</option>
+                            <option value="Outro">🎉 Outro</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">Status</label>
+                        <select id="festaStatus" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-pink-500 outline-none bg-white">
+                            <option value="Planejada">📋 Planejada</option>
+                            <option value="Confirmada">✅ Confirmada</option>
+                            <option value="Realizada">🎊 Realizada</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">Data</label>
+                        <input type="date" id="festaData" required class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-pink-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">Horário</label>
+                        <input type="time" id="festaHorario" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-pink-500 outline-none">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">Local</label>
+                        <input type="text" id="festaLocal" placeholder="Onde será?" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-pink-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">Orçamento (R$)</label>
+                        <input type="number" id="festaOrcamento" min="0" step="0.01" placeholder="0,00" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-pink-500 outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">Convidados</label>
+                    <div id="festaConvidados" class="max-h-28 overflow-y-auto border rounded-lg p-2 space-y-1 bg-gray-50">
+                        <!-- Checkboxes serão injetados aqui -->
+                    </div>
+                    <p class="text-xs text-gray-400 mt-1">Selecione os amigos convidados</p>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">Observações</label>
+                    <textarea id="festaObservacoes" rows="2" placeholder="Ideias de presente, lembranças, etc..." class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-pink-500 outline-none"></textarea>
+                </div>
+
+                <button type="submit" class="w-full bg-pink-600 text-white font-bold py-3 rounded-lg mt-4 hover:bg-pink-700 transition shadow-md">
+                    Salvar Festa
+                </button>
+            </form>
+        </div>
+    </div>
+
     <script>
         // --- ESTADO E DADOS ---
         let amigos = JSON.parse(localStorage.getItem('meusAmigosPWA')) || [];
+        let festas = JSON.parse(localStorage.getItem('festasPWA')) || [];
         let charts = {};
 
         // --- FUNÇÕES AUXILIARES ---
@@ -201,6 +314,27 @@
             const [ano, mes, dia] = dataStr.split('-');
             return `${dia}/${mes}/${ano}`;
         };
+
+        // --- NAVEGAÇÃO POR ABAS ---
+        function mudarTab(tab) {
+            const tabAmigos = document.getElementById('tabAmigos');
+            const tabFestas = document.getElementById('tabFestas');
+            const secaoAmigos = document.getElementById('amigosSection');
+            const secaoFestas = document.getElementById('festasSection');
+
+            if (tab === 'amigos') {
+                tabAmigos.className = 'flex-1 py-3 text-center font-bold text-sm border-b-2 border-indigo-600 text-indigo-600 transition';
+                tabFestas.className = 'flex-1 py-3 text-center font-bold text-sm border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition';
+                secaoAmigos.classList.remove('hidden');
+                secaoFestas.classList.add('hidden');
+            } else {
+                tabFestas.className = 'flex-1 py-3 text-center font-bold text-sm border-b-2 border-pink-600 text-pink-600 transition';
+                tabAmigos.className = 'flex-1 py-3 text-center font-bold text-sm border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition';
+                secaoFestas.classList.remove('hidden');
+                secaoAmigos.classList.add('hidden');
+                renderizarFestas();
+            }
+        }
 
         // --- LÓGICA PRINCIPAL ---
         function salvarAmigo(e) {
@@ -256,12 +390,90 @@
             }
         }
 
+        // --- CRUD DE FESTAS ---
+        function salvarFesta(e) {
+            e.preventDefault();
+            const id = document.getElementById('festaId').value;
+            const convidados = [];
+            document.querySelectorAll('#festaConvidados input[type="checkbox"]:checked').forEach(cb => {
+                convidados.push(Number(cb.value));
+            });
+            const novaFesta = {
+                id: id ? Number(id) : Date.now(),
+                nome: document.getElementById('festaNome').value,
+                tipo: document.getElementById('festaTipo').value,
+                status: document.getElementById('festaStatus').value,
+                data: document.getElementById('festaData').value,
+                horario: document.getElementById('festaHorario').value,
+                local: document.getElementById('festaLocal').value,
+                orcamento: Number(document.getElementById('festaOrcamento').value) || 0,
+                convidados: convidados,
+                observacoes: document.getElementById('festaObservacoes').value
+            };
+
+            if (id) {
+                const index = festas.findIndex(f => f.id === Number(id));
+                festas[index] = novaFesta;
+            } else {
+                festas.push(novaFesta);
+            }
+
+            localStorage.setItem('festasPWA', JSON.stringify(festas));
+            fecharModalFesta();
+            renderizarTudo();
+        }
+
+        function editarFesta(id) {
+            const festa = festas.find(f => f.id === id);
+            document.getElementById('festaId').value = festa.id;
+            document.getElementById('festaNome').value = festa.nome;
+            document.getElementById('festaTipo').value = festa.tipo;
+            document.getElementById('festaStatus').value = festa.status;
+            document.getElementById('festaData').value = festa.data;
+            document.getElementById('festaHorario').value = festa.horario || '';
+            document.getElementById('festaLocal').value = festa.local || '';
+            document.getElementById('festaOrcamento').value = festa.orcamento || '';
+            document.getElementById('festaObservacoes').value = festa.observacoes || '';
+            popularConvidadosCheckbox(festa.convidados || []);
+            
+            document.getElementById('modalFestaTitulo').innerText = 'Editar Festa';
+            abrirModalFesta();
+        }
+
+        function excluirFesta(id) {
+            if(confirm('Tem certeza que deseja remover esta festa?')) {
+                festas = festas.filter(f => f.id !== id);
+                localStorage.setItem('festasPWA', JSON.stringify(festas));
+                renderizarTudo();
+            }
+        }
+
+        function popularConvidadosCheckbox(selecionados) {
+            const container = document.getElementById('festaConvidados');
+            container.innerHTML = '';
+            if (amigos.length === 0) {
+                container.innerHTML = '<p class="text-xs text-gray-400 p-2">Nenhum amigo cadastrado.</p>';
+                return;
+            }
+            amigos.forEach(amigo => {
+                const checked = selecionados.includes(amigo.id) ? 'checked' : '';
+                container.innerHTML += `
+                    <label class="flex items-center gap-2 text-sm cursor-pointer hover:bg-white px-1 py-0.5 rounded">
+                        <input type="checkbox" value="${amigo.id}" ${checked} class="accent-pink-500">
+                        ${amigo.nome}
+                    </label>
+                `;
+            });
+        }
+
         // --- RENDERIZAÇÃO ---
         function renderizarTudo() {
             renderizarLista();
             renderizarAlertas();
             atualizarResumo();
             renderizarGraficos();
+            renderizarFestas();
+            popularConvidadosCheckbox([]);
         }
 
         function renderizarLista() {
@@ -329,14 +541,76 @@
             }
         }
 
+        function renderizarFestas() {
+            const container = document.getElementById('listaFestas');
+            const msgVazia = document.getElementById('msgVaziaFestas');
+            container.innerHTML = '';
+
+            if (festas.length === 0) {
+                msgVazia.classList.remove('hidden');
+                return;
+            }
+            msgVazia.classList.add('hidden');
+
+            const festasOrdenadas = [...festas].sort((a, b) => new Date(a.data) - new Date(b.data));
+
+            festasOrdenadas.forEach(festa => {
+                const dataFmt = formatarData(festa.data);
+                const statusCores = {
+                    'Planejada': 'bg-yellow-100 text-yellow-700',
+                    'Confirmada': 'bg-green-100 text-green-700',
+                    'Realizada': 'bg-gray-100 text-gray-500'
+                };
+                const corStatus = statusCores[festa.status] || 'bg-gray-100 text-gray-500';
+                const statusIcone = festa.status === 'Planejada' ? '📋' : festa.status === 'Confirmada' ? '✅' : '🎊';
+
+                let convidadosHtml = '';
+                if (festa.convidados && festa.convidados.length > 0) {
+                    const nomes = festa.convidados.map(id => {
+                        const amigo = amigos.find(a => a.id === id);
+                        return amigo ? amigo.nome : 'Desconhecido';
+                    });
+                    convidadosHtml = `<div class="col-span-2"><i class="fas fa-user-friends text-indigo-400 w-5"></i> ${nomes.join(', ')}</div>`;
+                }
+
+                const html = `
+                    <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-pink-400 fade-in relative">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <h3 class="font-bold text-lg text-gray-800">${festa.nome}</h3>
+                                <p class="text-xs text-gray-500"><i class="fas fa-tag mr-1"></i> ${festa.tipo} | <span class="${corStatus} text-xs px-2 py-0.5 rounded-full font-semibold">${statusIcone} ${festa.status}</span></p>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-2 text-sm text-gray-600 mb-3">
+                            <div><i class="fas fa-calendar-day text-pink-400 w-5"></i> ${dataFmt}${festa.horario ? ' às '+festa.horario : ''}</div>
+                            <div><i class="fas fa-map-marker-alt text-red-400 w-5"></i> ${festa.local || 'A definir'}</div>
+                            <div><i class="fas fa-dollar-sign text-green-500 w-5"></i> Orçamento: R$ ${festa.orcamento ? festa.orcamento.toFixed(2).replace('.', ',') : '0,00'}</div>
+                            ${convidadosHtml}
+                            ${festa.observacoes ? `<div class="col-span-2"><i class="fas fa-sticky-note text-gray-400 w-5"></i> ${festa.observacoes}</div>` : ''}
+                        </div>
+
+                        <div class="flex justify-end space-x-2 border-t pt-2 mt-2">
+                            <button onclick="editarFesta(${festa.id})" class="text-pink-600 hover:bg-pink-50 px-3 py-1 rounded text-sm font-semibold transition"><i class="fas fa-edit mr-1"></i> Editar</button>
+                            <button onclick="excluirFesta(${festa.id})" class="text-red-500 hover:bg-red-50 px-3 py-1 rounded text-sm font-semibold transition"><i class="fas fa-trash mr-1"></i> Excluir</button>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += html;
+            });
+        }
+
         function atualizarResumo() {
             document.getElementById('totalAmigos').innerText = amigos.length;
             const totalFilhos = amigos.reduce((acc, curr) => acc + curr.numFilhos, 0);
             document.getElementById('totalCriancas').innerText = totalFilhos;
             
             const mesAtual = new Date().getMonth();
-            const festasMes = amigos.filter(a => new Date(a.nascimento).getMonth() === mesAtual).length;
-            document.getElementById('festasMes').innerText = festasMes;
+            const festasNesteMes = festas.filter(f => {
+                const mesFesta = new Date(f.data).getMonth();
+                return mesFesta === mesAtual;
+            }).length;
+            document.getElementById('festasMes').innerText = festasNesteMes;
         }
 
         function renderizarGraficos() {
@@ -360,11 +634,11 @@
             // 3. Gráfico de Festas por Mês
             const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
             const contagemMeses = new Array(12).fill(0);
-            amigos.forEach(a => {
-                const mes = new Date(a.nascimento).getMonth();
-                contagemMeses[mes]++;
+            festas.forEach(f => {
+                const mes = new Date(f.data).getMonth();
+                if (!isNaN(mes)) contagemMeses[mes]++;
             });
-            criarGrafico('chartFestas', 'bar', meses, contagemMeses, ['#8b5cf6'], 'Aniversários/Mês');
+            criarGrafico('chartFestas', 'bar', meses, contagemMeses, ['#ec4899'], 'Eventos/Mês');
         }
 
         function criarGrafico(canvasId, tipo, labels, dados, cores, titulo) {
@@ -404,6 +678,18 @@
             document.getElementById('formAmigo').reset();
             document.getElementById('amigoId').value = '';
             document.getElementById('modalTitulo').innerText = 'Novo Amigo';
+        }
+
+        // --- CONTROLE DO MODAL DE FESTAS ---
+        function abrirModalFesta() {
+            document.getElementById('modalFesta').classList.remove('hidden');
+        }
+        function fecharModalFesta() {
+            document.getElementById('modalFesta').classList.add('hidden');
+            document.getElementById('formFesta').reset();
+            document.getElementById('festaId').value = '';
+            document.getElementById('modalFestaTitulo').innerText = 'Nova Festa';
+            popularConvidadosCheckbox([]);
         }
 
         // Inicialização

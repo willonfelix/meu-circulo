@@ -1,0 +1,32 @@
+
+Aqui está um aplicativo PWA (Progressive Web App) completo, projetado especificamente para gerenciar seu círculo social com todas as funcionalidades que você pediu, além de algumas ideias extras valiosas (como "Último Contato" e "Nível de Proximidade" para ajudar a manter as amizades vivas).
+O código está dividido em 3 arquivos, como exige um PWA real.
+
+Passo 1: O Arquivo Principal (index.html)
+Este arquivo contém toda a estrutura, o estilo (via Tailwind CSS), a lógica (JavaScript) e a renderização dos gráficos (Chart.js).
+Crie um arquivo chamado index.html e cole o código abaixo:
+
+Passo 2: O Arquivo de Manifesto (manifest.json)
+Crie um arquivo chamado manifest.json na mesma pasta. Ele define o comportamento do app quando instalado.
+
+Passo 3: O Service Worker (sw.js)
+Crie um arquivo chamado sw.js na mesma pasta. Ele garante que o app funcione offline.
+
+Passo 4: Os Ícones (Obrigatório para PWA)
+Para que o botão "Instalar" apareça, você precisa de duas imagens na mesma pasta:
+icon-192.png (192x192 pixels)
+icon-512.png (512x512 pixels)
+
+🌟 Ideias Extras que foram implementadas no código:
+Alerta Inteligente de Aniversário: Um banner amarelo aparece no topo automaticamente se alguém fizer aniversário nos próximos 7 dias (ou "É Hoje!" com animação).
+Nível de Proximidade: Campos para classificar se é "Melhor Amigo", "Próximo" ou "Conhecido", com cores diferentes na borda do cartão para destaque visual.
+Rastreador de Último Contato: Ajuda a responder a pergunta "Faz quanto tempo que não falo com essa pessoa?", incentivando a manter a amizade viva.
+Gráfico de "Festas por Mês": Mostra em quais meses do ano você terá mais gastos com presentes/festas, permitindo planejamento financeiro.
+Ordenação Automática: A lista de amigos é automaticamente ordenada colocando primeiro quem está mais próximo do aniversário.
+
+Como testar e instalar:
+Coloque os 4 arquivos (index.html, manifest.json, sw.js, icon-192.png, icon-512.png) na mesma pasta.
+Não abra clicando duas vezes. PWAs exigem um servidor.
+No VS Code: Instale a extensão "Live Server", clique com o botão direito no index.html e escolha "Open with Live Server".
+Na Internet (Recomendado para celular): Suba esses arquivos para o GitHub Pages ou Netlify Drop (gratuito e arrasta-e-solta).
+Acesse pelo Chrome no celular. Toque no menu (três pontos) e selecione "Adicionar à tela inicial". O app abrirá em tela cheia, sem barra de navegador, funcionando como um app nativo, mesmo sem internet!
