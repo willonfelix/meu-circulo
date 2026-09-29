@@ -41,7 +41,13 @@
 - **Gráfico "Faixa Etária"**: Barras — faixas 18-25, 26-35, 36-50, 50+
 - **Gráfico "Eventos/Mês"**: Barras — eventos por mês (Jan–Dez)
 
-### 2.4 PWA
+### 2.4 Exportação / Importação
+| Funcionalidade | Descrição |
+|---|---|
+| Exportar Dados | Gera arquivo `.json` com todos os amigos e festas, nomeado `meu-circulo-YYYY-MM-DD.json` |
+| Importar Dados | Lê arquivo `.json`, valida estrutura, confirma com usuário e substitui dados atuais |
+
+### 2.5 PWA
 - Instalável na tela inicial (manifest.json + service worker)
 - Funciona offline (cache via service worker)
 - Responsivo (mobile-first com Tailwind CSS)
@@ -72,6 +78,17 @@
 
 ### 3.3 Armazenamento
 **localStorage** — duas chaves:
+
+Os dados podem ser exportados para um arquivo JSON com o seguinte schema:
+
+```json
+{
+  "versao": 1,
+  "exportadoEm": "2026-06-02T12:00:00.000Z",
+  "amigos": [ /* array de objetos da chave meusAmigosPWA */ ],
+  "festas": [ /* array de objetos da chave festasPWA */ ]
+}
+```
 
 #### `meusAmigosPWA`
 ```json
@@ -116,6 +133,7 @@
 ### 4.1 Header
 - Título "Meu Círculo" com ícone
 - Botão "Novo Amigo" (sempre visível, abre modal de amigo)
+- Botão engrenagem ⚙️ (abre modal de configurações com exportar/importar)
 
 ### 4.2 Abas de Navegação
 - **Amigos** (ativa por padrão) — borda inferior azul
@@ -141,6 +159,9 @@ Campos: Nome*, Nascimento*, Gênero, Estilo, Preferências, Nº Filhos, Gênero 
 
 #### Modal Festa
 Campos: Nome do Evento*, Tipo, Status, Data*, Horário, Local, Orçamento, Convidados (checkboxes), Observações
+
+#### Modal Configurações
+Dois botões: "Exportar Dados" (download de JSON) e "Importar Dados" (upload de JSON via input oculto)
 
 ---
 
@@ -199,7 +220,14 @@ Campos: Nome do Evento*, Tipo, Status, Data*, Horário, Local, Orçamento, Convi
 | `formatarData(dataStr)` | Converte `YYYY-MM-DD` para `DD/MM/YYYY` |
 | `criarGrafico(canvasId, tipo, labels, dados, cores, titulo)` | Renderiza gráfico via Chart.js |
 
-### 6.5 Modais
+### 6.5 Exportação / Importação
+| Função | Descrição |
+|---|---|
+| `exportarDados()` | Gera e baixa arquivo JSON com todos os dados |
+| `processarImportacao(e)` | Lê arquivo JSON, valida, confirma e substitui dados |
+| `abrirModalConfig()` / `fecharModalConfig()` | Abre/fecha modal de configurações |
+
+### 6.6 Modais
 | Função | Descrição |
 |---|---|
 | `abrirModal()` / `fecharModal()` | Abre/fecha modal de amigo |
@@ -223,7 +251,6 @@ Estratégia de cache: **Cache First** para assets estáticos (CDNs e arquivos lo
 
 ## 8. Possíveis Melhorias Futuras
 
-- [ ] Exportar/importar dados (JSON)
 - [ ] Notificações push para lembretes de aniversário
 - [ ] Tema escuro
 - [ ] Upload de foto do amigo
