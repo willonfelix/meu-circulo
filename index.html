@@ -303,6 +303,25 @@
                     <i class="fas fa-upload"></i> Importar Dados
                 </button>
             </div>
+            <div class="border-t mt-5 pt-4 space-y-3">
+                <h3 class="font-bold text-gray-700 text-sm">Backup automático</h3>
+                <label class="flex items-center justify-between text-sm text-gray-600">
+                    <span>Ativar backup automático</span>
+                    <input type="checkbox" id="backupAtivo" onchange="alterarConfiguracaoBackup()" class="accent-indigo-600">
+                </label>
+                <label class="block text-sm text-gray-600">
+                    Frequência
+                    <select id="backupFrequencia" onchange="alterarConfiguracaoBackup()" class="w-full p-2 border rounded-lg mt-1 bg-white">
+                        <option value="alteracao">A cada alteração</option>
+                        <option value="diario">Uma vez por dia</option>
+                        <option value="semanal">Uma vez por semana</option>
+                    </select>
+                </label>
+                <button onclick="criarBackupManual()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition shadow-md flex items-center justify-center gap-2">
+                    <i class="fas fa-shield-alt"></i> Criar Backup Agora
+                </button>
+                <p id="backupStatus" class="text-xs text-gray-500"></p>
+            </div>
         </div>
     </div>
 
@@ -313,6 +332,12 @@
         // --- ESTADO E DADOS ---
         let amigos = JSON.parse(localStorage.getItem('meusAmigosPWA')) || [];
         let festas = JSON.parse(localStorage.getItem('festasPWA')) || [];
+        let backupConfig = JSON.parse(localStorage.getItem('backupConfigPWA')) || {
+            ativo: false,
+            frequencia: 'alteracao',
+            ultimoBackup: null,
+            ultimaAssinatura: null
+        };
         let charts = {};
 
         // --- FUNÇÕES AUXILIARES ---
@@ -390,6 +415,7 @@
             localStorage.setItem('meusAmigosPWA', JSON.stringify(amigos));
             fecharModal();
             renderizarTudo();
+            solicitarBackupAutomatico();
         }
 
         function editarAmigo(id) {
@@ -414,6 +440,7 @@
                 amigos = amigos.filter(a => a.id !== id);
                 localStorage.setItem('meusAmigosPWA', JSON.stringify(amigos));
                 renderizarTudo();
+                solicitarBackupAutomatico();
             }
         }
 
@@ -448,6 +475,7 @@
             localStorage.setItem('festasPWA', JSON.stringify(festas));
             fecharModalFesta();
             renderizarTudo();
+            solicitarBackupAutomatico();
         }
 
         function editarFesta(id) {
@@ -472,6 +500,7 @@
                 festas = festas.filter(f => f.id !== id);
                 localStorage.setItem('festasPWA', JSON.stringify(festas));
                 renderizarTudo();
+                solicitarBackupAutomatico();
             }
         }
 
@@ -722,28 +751,114 @@
         // --- EXPORTAÇÃO / IMPORTAÇÃO ---
         function abrirModalConfig() {
             document.getElementById('modalConfig').classList.remove('hidden');
+            carregarConfiguracaoBackup();
         }
         function fecharModalConfig() {
             document.getElementById('modalConfig').classList.add('hidden');
         }
 
-        function exportarDados() {
-            const dados = {
+        function obterDadosBackup() {
+            return {
                 versao: 1,
                 exportadoEm: new Date().toISOString(),
                 amigos: amigos,
                 festas: festas
             };
+        }
+
+        function obterAssinaturaDados() {
+            return JSON.stringify({ amigos, festas });
+        }
+
+        function persistirConfiguracaoBackup() {
+            localStorage.setItem('backupConfigPWA', JSON.stringify(backupConfig));
+        }
+
+        function formatarDataHora(data) {
+            if (!data) return 'Nenhum backup realizado';
+            return new Date(data).toLocaleString('pt-BR');
+        }
+
+        function atualizarStatusBackup() {
+            const status = document.getElementById('backupStatus');
+            if (!status) return;
+            const frequencias = {
+                alteracao: 'a cada alteração',
+                diario: 'uma vez por dia',
+                semanal: 'uma vez por semana'
+            };
+            const estado = backupConfig.ativo
+                ? `Ativo: ${frequencias[backupConfig.frequencia]}.`
+                : 'Desativado.';
+            status.textContent = `${estado} Último backup: ${formatarDataHora(backupConfig.ultimoBackup)}.`;
+        }
+
+        function carregarConfiguracaoBackup() {
+            document.getElementById('backupAtivo').checked = backupConfig.ativo;
+            document.getElementById('backupFrequencia').value = backupConfig.frequencia;
+            atualizarStatusBackup();
+        }
+
+        function alterarConfiguracaoBackup() {
+            backupConfig.ativo = document.getElementById('backupAtivo').checked;
+            backupConfig.frequencia = document.getElementById('backupFrequencia').value;
+            persistirConfiguracaoBackup();
+            atualizarStatusBackup();
+        }
+
+        function backupEstaVencido() {
+            if (!backupConfig.ultimoBackup) return true;
+            const intervalo = backupConfig.frequencia === 'semanal'
+                ? 7 * 24 * 60 * 60 * 1000
+                : backupConfig.frequencia === 'diario'
+                    ? 24 * 60 * 60 * 1000
+                    : 0;
+            return Date.now() - new Date(backupConfig.ultimoBackup).getTime() >= intervalo;
+        }
+
+        function baixarBackup(motivo) {
+            const dados = obterDadosBackup();
+            const agora = new Date();
+            const data = agora.toISOString().slice(0, 10);
+            const hora = agora.toTimeString().slice(0, 5).replace(':', '');
+            const prefixo = motivo === 'automatico' ? 'backup' : motivo;
             const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `meu-circulo-${new Date().toISOString().split('T')[0]}.json`;
+            a.download = `meu-circulo-${prefixo}-${data}-${hora}.json`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-            fecharModalConfig();
+            backupConfig.ultimoBackup = agora.toISOString();
+            backupConfig.ultimaAssinatura = obterAssinaturaDados();
+            persistirConfiguracaoBackup();
+            atualizarStatusBackup();
+        }
+
+        function solicitarBackupAutomatico() {
+            if (!backupConfig.ativo || !backupEstaVencido() || backupConfig.ultimaAssinatura === obterAssinaturaDados()) return;
+            try {
+                baixarBackup('automatico');
+            } catch (erro) {
+                console.error('Backup automático falhou:', erro);
+                alert('Não foi possível criar o backup automático. Use "Criar Backup Agora" para tentar novamente.');
+            }
+        }
+
+        function criarBackupManual() {
+            try {
+                baixarBackup('manual');
+                fecharModalConfig();
+            } catch (erro) {
+                console.error('Backup manual falhou:', erro);
+                alert('Não foi possível criar o backup. Verifique as permissões de download do navegador.');
+            }
+        }
+
+        function exportarDados() {
+            criarBackupManual();
         }
 
         function processarImportacao(e) {
@@ -753,18 +868,22 @@
             reader.onload = function (ev) {
                 try {
                     const dados = JSON.parse(ev.target.result);
-                    if (!dados.amigos || !Array.isArray(dados.amigos) || !dados.festas || !Array.isArray(dados.festas)) {
-                        alert('Arquivo inválido. O JSON deve conter os arrays "amigos" e "festas".');
+                    if (dados.versao !== 1 || !Array.isArray(dados.amigos) || !Array.isArray(dados.festas)) {
+                        alert('Arquivo inválido. O JSON deve ter a versão 1 e conter os arrays "amigos" e "festas".');
                         return;
                     }
                     const msg = `Isso substituirá TODOS os dados atuais.\n\nAmigos: ${dados.amigos.length}\nFestas: ${dados.festas.length}\n\nTem certeza?`;
                     if (!confirm(msg)) return;
+                    if (amigos.length > 0 || festas.length > 0) {
+                        baixarBackup('pre-restauracao');
+                    }
                     amigos = dados.amigos;
                     festas = dados.festas;
                     localStorage.setItem('meusAmigosPWA', JSON.stringify(amigos));
                     localStorage.setItem('festasPWA', JSON.stringify(festas));
                     fecharModalConfig();
                     renderizarTudo();
+                    solicitarBackupAutomatico();
                     alert('Dados importados com sucesso!');
                 } catch (err) {
                     alert('Erro ao ler o arquivo. Verifique se é um JSON válido.');
@@ -776,6 +895,7 @@
 
         // Inicialização
         window.addEventListener('load', () => {
+            carregarConfiguracaoBackup();
             renderizarTudo();
             // Registro do Service Worker para PWA
             if ('serviceWorker' in navigator) {
